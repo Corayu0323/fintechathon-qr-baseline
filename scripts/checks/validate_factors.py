@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,12 +12,11 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+ROOT = Path(__file__).resolve().parents[2]
 
-from build_factors import calculate, load_spec  # noqa: E402
-from factor_diagnostics import evaluate_factor_panel  # noqa: E402
-from factor_preprocessing import transform_inputs  # noqa: E402
+from scripts.factors.build import calculate, load_spec
+from scripts.factors.diagnostics import evaluate_factor_panel
+from scripts.modeling.preprocessing import transform_inputs
 
 
 KEYS = ["trade_date", "ts_code"]

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 from pathlib import Path
 
@@ -13,13 +12,11 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parents[2]
 
-from official_score import score_frame
+from scripts.evaluation.official_score import score_frame
 from evaluate import evaluate
-from qlib_bridge import load_window
+from scripts.modeling.qlib_bridge import load_window
 
 
 def validate_score_parity() -> None:

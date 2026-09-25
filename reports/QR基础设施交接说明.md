@@ -6,16 +6,16 @@
 
 反复试验使用 Qlib Recorder + MLflow 的本地 SQLite 后端。每次拟合有独立 run ID；参数、阶段边界、输入变换、评分、训练规模、耗时、模型文件和运行摘要随 run 保存。预测文件保存在唯一的本地 run 目录中，记录库保存其路径以避免复制大型预测文件。实验库与 run 产物位于 `outputs/experiment_tracking/`，不纳入 Git。
 
-接入记录功能前已完成的 D/H/S 结果通过 `scripts/import_existing_runs.py` 导入，标记为 `legacy_import`。该脚本按阶段和旧配置键检查重复，可安全重复运行。之后重跑同一模型/变换会追加新 run；阶段 `summary.json` 作为便于阅读的汇总索引更新，不能代替 Recorder 中不可覆盖的历史记录。
+接入记录功能前已完成的 D/H/S 结果通过 `scripts/experiments/import_existing_runs.py` 导入，标记为 `legacy_import`。该脚本按阶段和旧配置键检查重复，可安全重复运行。之后重跑同一模型/变换会追加新 run；阶段 `summary.json` 作为便于阅读的汇总索引更新，不能代替 Recorder 中不可覆盖的历史记录。
 
 ```bash
-.venv/bin/python scripts/import_existing_runs.py
+.venv/bin/python -m scripts.experiments.import_existing_runs
 .venv/bin/mlflow ui --backend-store-uri sqlite:///outputs/experiment_tracking/mlflow.db --host 127.0.0.1 --port 5000
 ```
 
 MLflow 页面先承担运行检索和对比；研究型数据看板会从实验记录读取数据，展示预先定义的核心图表与诊断，不采用自由拖拽的 EDA 布局。
 
-固定版式看板由 `scripts/build_dashboard.py` 生成到 `outputs/dashboard/index.html`，不需要额外可视化依赖。它汇总 D 阶段官方综合分及分项对照、H 冻结结果、S 预测覆盖，并支持按阶段、模型、变换筛选最近运行记录及导出 CSV。新实验完成后重新运行构建脚本即可刷新页面；MLflow 页面保留用于查看单个 run 的参数和模型附件。
+固定版式看板由 `scripts/reporting/build_dashboard.py` 生成到 `outputs/dashboard/index.html`，不需要额外可视化依赖。它汇总 D 阶段官方综合分及分项对照、H 冻结结果、S 预测覆盖，并支持按阶段、模型、变换筛选最近运行记录及导出 CSV。新实验完成后重新运行构建脚本即可刷新页面；MLflow 页面保留用于查看单个 run 的参数和模型附件。
 
 ## 冻结的首轮配置
 
@@ -69,10 +69,10 @@ D、H、S 是不同训练起点和评估区间，不能直接比较整体分数�
 
 ## 数据时钟与预处理
 
-- 因子矩阵由 `scripts/build_factors.py` 生成，公式注册在 `scripts/factors/`，定义及版本见 `specs/factor_set_v0.2.json` 与 `data/features/factor_v0.2/catalog.json`；因子生成不读取标签。
-- 输入变换已从模型 runner 拆到 `scripts/factor_preprocessing.py`，支持 identity、训练期 z-score、每日截面 z-score、截面 rank；训练期 scaler 可序列化并在验证/预测复用。
-- 单因子检查由 `scripts/factor_diagnostics.py` 在 D 段运行，输出覆盖率、日度 IC/RankIC 汇总与因子间日度 Rank 相关，并写入 Qlib Recorder；它只用于因子诊断，模型选型仍按题给综合评分。
-- 模型配方移至 `configs/model_recipes.json`，D/H/S 阶段和冻结方案移至 `configs/experiment_protocol.json`；LightGBM、Qlib Ridge 与透明信号基线实现拆在 `scripts/models/`。每次模型运行的配置副本、SHA-256 与模型附件一并写入 Recorder 和本地 run 目录。
+- 因子矩阵由 `scripts/factors/build.py` 生成，公式注册在 `scripts/factors/formulas/`，定义及版本见 `specs/factor_set_v0.2.json` 与 `data/features/factor_v0.2/catalog.json`；因子生成不读取标签。
+- 输入变换已从模型 runner 拆到 `scripts/modeling/preprocessing.py`，支持 identity、训练期 z-score、每日截面 z-score、截面 rank；训练期 scaler 可序列化并在验证/预测复用。
+- 单因子检查由 `scripts/factors/diagnostics.py` 在 D 段运行，输出覆盖率、日度 IC/RankIC 汇总与因子间日度 Rank 相关，并写入 Qlib Recorder；它只用于因子诊断，模型选型仍按题给综合评分。
+- 模型配方移至 `configs/model_recipes.json`，D/H/S 阶段和冻结方案移至 `configs/experiment_protocol.json`；LightGBM、Qlib Ridge 与透明信号基线实现拆在 `scripts/modeling/models/`。每次模型运行的配置副本、SHA-256 与模型附件一并写入 Recorder 和本地 run 目录。
 - 因子重构验收：新旧 2018—2026 年矩阵列、全量主键和缺失掩码一致，逐列最大绝对差为 0；未来扰动不改变过去因子，按分区加 warm-up 与连续计算一致。旧矩阵原样保存在 `data/features/legacy_unversioned_reference/` 作为本地 parity 参照。
 - 每次拟合使用截至该阶段拟合截止日已经成熟的标签。
 - 内部验证之前的训练标签，必须在验证开始前最后一个共同交易日收盘时已经成熟。valid 标签只用于选 LightGBM 轮数；最终模型和 scaler 在该阶段全部合格训练样本上重新拟合。
@@ -82,11 +82,11 @@ D、H、S 是不同训练起点和评估区间，不能直接比较整体分数�
 ## 复现命令
 
 ```bash
-.venv/bin/python scripts/build_factors.py
-.venv/bin/python scripts/run_fixed_baseline.py --phase D --models ret1_momentum ret1_reversal ridge lightgbm --transforms train_zscore cs_zscore cs_rank identity
-.venv/bin/python scripts/run_fixed_baseline.py --phase H
-.venv/bin/python scripts/run_fixed_baseline.py --phase S
-.venv/bin/python scripts/validate_pipeline.py
+.venv/bin/python -m scripts.factors.build
+.venv/bin/python -m scripts.modeling.run_fixed --phase D --models ret1_momentum ret1_reversal ridge lightgbm --transforms train_zscore cs_zscore cs_rank identity
+.venv/bin/python -m scripts.modeling.run_fixed --phase H
+.venv/bin/python -m scripts.modeling.run_fixed --phase S
+.venv/bin/python -m scripts.checks.validate_pipeline
 ```
 
 D 的阶段汇总写入 `outputs/fixed_baseline/summary.json`；H/S 的阶段汇总写入各自子目录。接入 Recorder 后，新运行的预测与模型写到 `outputs/fixed_baseline/<阶段>/runs/<run_uuid>__<配置>/`，同一配置重复运行也会分配新目录；S 的提交文件仍导出到 `outputs/fixed_baseline/S/submission.csv` 作为便捷的最新版本。SQLite 记录库和 MLflow 模型/元数据附件在 `outputs/experiment_tracking/`。这些生成文件均由 `.gitignore` 排除，Git 交接包括代码、spec、因子 catalog、依赖文件与本说明，不包括数据、运行附件或模型。

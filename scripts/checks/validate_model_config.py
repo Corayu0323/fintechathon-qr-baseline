@@ -3,18 +3,12 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-
-from models.config import load_model_config, load_protocol_config  # noqa: E402
-from models.lightgbm_model import _estimator_params, fit as fit_lightgbm  # noqa: E402
-from models.signals import predict_signal  # noqa: E402
+from scripts.modeling.config import load_model_config, load_protocol_config
+from scripts.modeling.models.lightgbm import _estimator_params, fit as fit_lightgbm
+from scripts.modeling.models.signals import predict_signal
 
 
 def main() -> None:
@@ -55,7 +49,7 @@ def main() -> None:
     })()
     signal = predict_signal(window, models["ret1_momentum"])
     assert signal.iloc[0] == 0.1 and pd.isna(signal.iloc[1])
-    print("PASS: model recipes, D/H/S protocol defaults, LightGBM smoke fit, and signal adapter")
+    print("PASS: model recipes, D/H/S protocol defaults, LightGBM quick fit, and signal adapter")
 
 
 if __name__ == "__main__":

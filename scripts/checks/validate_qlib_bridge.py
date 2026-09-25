@@ -20,20 +20,20 @@ import pyarrow.parquet as pq
 from qlib.contrib.model.linear import LinearModel
 from qlib.data.dataset import DatasetH
 
-from qlib_bridge import KEY, _read_years, complete_predictions, load_window, to_qlib_handler
-from official_score import score_frame
+from scripts.modeling.qlib_bridge import KEY, _read_years, complete_predictions, load_window, to_qlib_handler
+from scripts.evaluation.official_score import score_frame
 
 
 def temporary_factor(prepared: Path, split: str, year: int,
                      start: int, end: int, output: Path) -> None:
     source = _read_years(prepared, split, KEY + ["bar_valid"], start, end)
     # Fixed stock-code transform checks key alignment only; it has no alpha claim.
-    source["feature_smoke_code"] = (
+    source["feature_interface_code"] = (
         source["ts_code"].str[:6].astype("float32") / 1_000_000
     ).where(source["bar_valid"])
     output.mkdir(parents=True, exist_ok=True)
     pq.write_table(
-        pa.Table.from_pandas(source[KEY + ["feature_smoke_code"]], preserve_index=False),
+        pa.Table.from_pandas(source[KEY + ["feature_interface_code"]], preserve_index=False),
         output / f"features_{year}.parquet",
     )
 
@@ -41,7 +41,7 @@ def temporary_factor(prepared: Path, split: str, year: int,
 def main() -> None:
     started = time.monotonic()
     prepared = Path("data/prepared")
-    with tempfile.TemporaryDirectory(prefix="qlib-smoke-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="qlib-interface-check-") as scratch:
         factors = Path(scratch)
         temporary_factor(prepared, "train", 2024, 20241220, 20241231, factors)
         temporary_factor(prepared, "test", 2025, 20250102, 20250103, factors)
@@ -50,7 +50,7 @@ def main() -> None:
                             min_valid_run=1, label_asof_date=20241231)
         test = load_window(prepared, factors, "test", 20250102, 20250103,
                            min_valid_run=1)
-        assert train.feature_names == test.feature_names == ["feature_smoke_code"]
+        assert train.feature_names == test.feature_names == ["feature_interface_code"]
         assert not train.auxiliary.loc[20241231, "label_available"].any()
         assert train.labels.loc[20241231, "y_ret_1d"].notna().sum() == 4525
         assert not test.labels["y_ret_1d"].notna().any()
@@ -96,7 +96,7 @@ def main() -> None:
             "test_rows": len(test.features),
             "fallback_rows": int((~complete["model_ready"]).sum()),
             "official_scoring_path": "pass (in-sample mechanics only)",
-            "factor": "temporary synthetic smoke column; no alpha interpretation",
+            "factor": "temporary synthetic interface-check column; no alpha interpretation",
             "elapsed_seconds": round(time.monotonic() - started, 2),
             "peak_rss_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20, 1),
         }, ensure_ascii=False, indent=2))

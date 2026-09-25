@@ -1,0 +1,1 @@
+"""Competition scoring adapters."""

@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,15 +14,14 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+ROOT = Path(__file__).resolve().parents[2]
 
-from experiment_tracking import (  # noqa: E402
+from scripts.experiments.tracking import (
     EXPERIMENT_NAME,
     initialize_tracking,
     parameter_values,
 )
-from qlib_bridge import load_window  # noqa: E402
+from scripts.modeling.qlib_bridge import load_window
 
 
 MIN_CROSS_SECTION = 30

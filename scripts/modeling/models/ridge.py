@@ -7,7 +7,7 @@ from dataclasses import replace
 from qlib.contrib.model.linear import LinearModel
 from qlib.data.dataset import DatasetH
 
-from qlib_bridge import to_qlib_handler
+from scripts.modeling.qlib_bridge import to_qlib_handler
 
 
 def _qlib_date(date: int) -> str:

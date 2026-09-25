@@ -24,19 +24,19 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import joblib
 
-from official_score import score_frame
-from factor_preprocessing import DEFAULT_TRANSFORMS, transform_inputs
-from experiment_tracking import (
+from scripts.evaluation.official_score import score_frame
+from scripts.modeling.preprocessing import DEFAULT_TRANSFORMS, transform_inputs
+from scripts.experiments.tracking import (
     EXPERIMENT_NAME,
     initialize_tracking,
     metric_values,
     new_run_name,
     parameter_values,
 )
-from qlib_bridge import complete_predictions, load_window
-from models.config import load_model_config, load_protocol_config
-from models import lightgbm_model, qlib_ridge
-from models.signals import predict_signal
+from scripts.modeling.qlib_bridge import complete_predictions, load_window
+from scripts.modeling.config import load_model_config, load_protocol_config
+from scripts.modeling.models import lightgbm, ridge
+from scripts.modeling.models.signals import predict_signal
 
 
 MODEL_CONFIG = load_model_config()
@@ -121,7 +121,7 @@ def fit_predict(
             fit_window.features, fit_window.auxiliary["model_ready"], early_fit, transform
         )
         y = fit_window.labels["y_ret_1d"]
-        rounds = lightgbm_model.select_rounds(
+        rounds = lightgbm.select_rounds(
             early_x.loc[early_fit], y.loc[early_fit],
             early_x.loc[valid_fit], y.loc[valid_fit], recipe, threads=threads,
         )
@@ -136,11 +136,11 @@ def fit_predict(
     x_train = final_x.loc[eligible_all].astype(np.float32)
     if model_name == "ridge":
         recipe = MODEL_RECIPES[model_name]
-        model = qlib_ridge.fit(fit_window, final_x, recipe, stage.fit_start, stage.fit_end)
+        model = ridge.fit(fit_window, final_x, recipe, stage.fit_start, stage.fit_end)
         rounds = None
     elif model_name == "lightgbm":
         recipe = MODEL_RECIPES[model_name]
-        model = lightgbm_model.fit(x_train, y_train, recipe, threads=threads, rounds=rounds)
+        model = lightgbm.fit(x_train, y_train, recipe, threads=threads, rounds=rounds)
     else:
         raise ValueError(f"unknown model: {model_name}")
 
@@ -151,7 +151,7 @@ def fit_predict(
     )
     ready = predict_window.auxiliary["model_ready"]
     if model_name == "ridge":
-        raw_pred = qlib_ridge.predict(
+        raw_pred = ridge.predict(
             model, predict_window, predict_x, stage.predict_start, stage.predict_end
         )
     else:

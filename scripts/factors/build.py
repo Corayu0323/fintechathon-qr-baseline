@@ -15,14 +15,14 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from factors import FORMULAS
+from scripts.factors.formulas import FORMULAS
 
 
 BAR_COLUMNS = [
     "trade_date", "ts_code", "open", "high", "low", "close", "vol",
     "amount", "bar_valid", "valid_bar_run",
 ]
-SPEC_PATH = Path(__file__).resolve().parents[1] / "specs" / "factor_set_v0.2.json"
+SPEC_PATH = Path(__file__).resolve().parents[2] / "specs" / "factor_set_v0.2.json"
 ALLOWED_SOURCE_FIELDS = {"open", "high", "low", "close", "vol", "amount"}
 
 
