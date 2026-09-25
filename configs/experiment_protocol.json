@@ -1,0 +1,39 @@
+{
+  "protocol_version": "fixed_v1",
+  "min_valid_run": 21,
+  "stages": {
+    "D": {
+      "fit_split": "train",
+      "fit_start": 20180101,
+      "fit_end": 20201231,
+      "valid_start": 20201001,
+      "predict_split": "train",
+      "predict_start": 20210101,
+      "predict_end": 20231231,
+      "models": ["ridge", "lightgbm"],
+      "transforms": ["train_zscore", "cs_zscore", "cs_rank", "identity"]
+    },
+    "H": {
+      "fit_split": "train",
+      "fit_start": 20210101,
+      "fit_end": 20231231,
+      "valid_start": 20231001,
+      "predict_split": "train",
+      "predict_start": 20240101,
+      "predict_end": 20241231,
+      "models": ["lightgbm"],
+      "transforms": ["identity"]
+    },
+    "S": {
+      "fit_split": "train",
+      "fit_start": 20220101,
+      "fit_end": 20241231,
+      "valid_start": 20241001,
+      "predict_split": "test",
+      "predict_start": 20250101,
+      "predict_end": 20261231,
+      "models": ["lightgbm"],
+      "transforms": ["identity"]
+    }
+  }
+}

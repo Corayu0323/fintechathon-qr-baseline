@@ -1,0 +1,31 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Source data and regenerated research outputs
+赛题五数据.zip
+赛题五数据/
+data/features/
+data/interim/
+data/prepared/
+data/metadata/raw_audit.json
+outputs/
+mlruns/
+logs/
+*.log
+*.tmp
+
+# Local-only source material and transient runtime artifacts
+private/
+/因子相关研报/
+/赛题五-更新.pdf
+/evaluate.R
+
+# Model artifacts
+checkpoints/
+*.pt
+*.pth
+*.ckpt
